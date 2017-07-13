@@ -4,7 +4,7 @@
  * Description: This plugin reduces the inventory when new order processes, and restock products when the order status change to Cancelled.
  * Author: Everton Strack
  * Author URI: https://evertonstrack.com.br
- * Version: 1.0.0
+ * Version: 1.0.4
  */
 
 /*  Copyright 2017 - Everton Strack */
@@ -27,6 +27,10 @@ if ( ! class_exists( 'WC_Auto_Reduce_Increase_Stock' ) ) {
 
 			// Reduce order stock when order its processed.
 			add_action( 'woocommerce_order_status_on-hold', array( $this,'reduce_order_stock' ), 10, 1 );
+			// add_action( 'woocommerce_order_status_processing', array( $this,'reduce_order_stock' ), 10, 1 );
+
+			// Adiciona nota para o cliente sobre o pagamento recebido e desconta do estoque
+			add_action( 'woocommerce_order_status_processing', array( $this,'add_note_payment_done' ), 10, 1 ); 
 
 			// Block Woocommerce reduce order stock when payment complete.
 			add_filter( 'woocommerce_payment_complete_reduce_order_stock', array( $this, '__return_false'), 10, 1 );
@@ -35,6 +39,7 @@ if ( ! class_exists( 'WC_Auto_Reduce_Increase_Stock' ) ) {
 			add_action( 'woocommerce_order_status_processing_to_cancelled', array( $this, 'restore_order_stock' ), 10, 1 );
 			add_action( 'woocommerce_order_status_completed_to_cancelled', array( $this, 'restore_order_stock' ), 10, 1 );
 			add_action( 'woocommerce_order_status_on-hold_to_cancelled', array( $this, 'restore_order_stock' ), 10, 1 );
+			add_action( 'woocommerce_order_status_processing_to_refunded', array( $this, 'restore_order_stock' ), 10, 1 );
 		}
 
 		/*
@@ -68,6 +73,17 @@ if ( ! class_exists( 'WC_Auto_Reduce_Increase_Stock' ) ) {
 					}
 				}
 			}
+		}
+
+		/**
+		* Adiciona nota para o cliente sobre o pagamento recebido
+		*	define the woocommerce_order_status_processing callback 
+		* @param int $order_id Order ID.
+		*/
+		public function add_note_payment_done( $order_id ) {
+			//$this->reduce_order_stock( $order_id );
+			$order = new WC_Order( $order_id );
+			$order->add_order_note( 'Pagamento confirmado. O status do seu pedido será alterado para "Em produção". O prazo de produção varia de 5 a 10 dias úteis.', 1 );
 		}
 
 		/**
