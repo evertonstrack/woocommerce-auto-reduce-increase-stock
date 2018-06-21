@@ -1,10 +1,10 @@
 <?php
 /**
  * Plugin Name: WooCommerce Auto Reduce/Increase Stock
- * Description: This plugin reduces the inventory when new order processes, and restock products when the order status change to Cancelled.
+ * Description: This MU plugin reduces the inventory when new order processes, and restock products when the order status change to Cancelled.
  * Author: Everton Strack
  * Author URI: https://evertonstrack.com.br
- * Version: 1.0.4
+ * Version: 1.0.5
  */
 
 /*  Copyright 2017 - Everton Strack */
@@ -42,7 +42,7 @@ if ( ! class_exists( 'WC_Auto_Reduce_Increase_Stock' ) ) {
 			add_action( 'woocommerce_order_status_processing_to_refunded', array( $this, 'restore_order_stock' ), 10, 1 );
 		}
 
-		/*
+		/**
 		*	Restore or stock
 		*
 		* @param int $order_id Order ID.
@@ -67,7 +67,6 @@ if ( ! class_exists( 'WC_Auto_Reduce_Increase_Stock' ) ) {
 							do_action( 'woocommerce_auto_stock_restored', $product, $item );
 
 							$order->add_order_note( sprintf( __( 'Estoque do produto %1$s foi restaurado para %2$s.', 'woocommerce' ), $item_name, $new_stock) );
-
 							$order->send_stock_notifications( $product, $new_stock, $item['qty'] );
 						}
 					}
@@ -81,7 +80,7 @@ if ( ! class_exists( 'WC_Auto_Reduce_Increase_Stock' ) ) {
 		* @param int $order_id Order ID.
 		*/
 		public function add_note_payment_done( $order_id ) {
-			//$this->reduce_order_stock( $order_id );
+
 			$order = new WC_Order( $order_id );
 			$order->add_order_note( 'Pagamento confirmado. O status do seu pedido será alterado para "Em produção". O prazo de produção varia de 5 a 10 dias úteis.', 1 );
 		}
@@ -98,9 +97,13 @@ if ( ! class_exists( 'WC_Auto_Reduce_Increase_Stock' ) ) {
 			if($gateway[0] == 'pagseguro'){
 				$order = new WC_Order( $order_id );
 				$order->add_order_note('PagSeguro: O comprador iniciou a transação, mas até o momento o PagSeguro não recebeu nenhuma informação sobre o pagamento. Status do pedido será alterado de Pagamento pendente para Aguardando e o estoque será reduzido automaticamente.');
-				$order->reduce_order_stock();
-			}
 
+				if ( function_exists( 'wc_reduce_stock_levels' ) ) {
+					wc_reduce_stock_levels( $order_id );
+				} else {
+					$order->reduce_order_stock();
+				}
+			}
 		}
 
 		public function change_order_status( $order_id ) {
